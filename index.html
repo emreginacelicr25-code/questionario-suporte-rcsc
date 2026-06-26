@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Instrumento de Classificação de Suporte – RCSC 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --navy: #1A3A6E;
+    --blue: #2E75B6;
+    --red: #C62828;
+    --orange: #E65100;
+    --green: #2E7D32;
+    --amber: #B45309;
+    --bg: #F4F6FB;
+    --white: #ffffff;
+    --gray-border: #D0D5DD;
+    --gray-text: #4A5568;
+    --radius: 12px;
+    --shadow: 0 1px 8px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, var(--navy), var(--blue));
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    flex-wrap: wrap; gap: 10px;
+  }
+  .header-title { color: #fff; font-weight: 800; font-size: 15px; }
+  .header-sub { color: rgba(255,255,255,0.72); font-size: 11px; }
+
+  /* ── NAV TABS ── */
+  .nav-tabs { display: flex; gap: 6px; }
+  .nav-tab {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; font-family: inherit;
+    background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.6);
+    transition: all .2s;
+  }
+  .nav-tab.active { background: rgba(255,255,255,0.25); color: #fff; font-weight: 700; }
+
+  /* ── BREADCRUMB ── */
+  .breadcrumb { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .bc-step {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px;
+    background: transparent; color: rgba(255,255,255,0.45);
+  }
+  .bc-step.active { background: rgba(255,255,255,0.25); color: #fff; font-weight: 700; }
+  .bc-sep { color: rgba(255,255,255,0.35); font-size: 12px; }
+
+  /* ── MAIN ── */
+  main { padding: 28px 20px; max-width: 820px; margin: 0 auto; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--white); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px 26px;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  label.lbl { font-size: 12px; font-weight: 700; color: #344054; margin-bottom: 5px; display: block; }
+  input[type=text], input[type=date], select {
+    width: 100%; padding: 9px 12px; border-radius: 8px;
+    border: 1px solid var(--gray-border); font-size: 13px;
+    font-family: inherit; outline: none;
+    transition: border-color .2s;
+  }
+  input[type=text]:focus, input[type=date]:focus, select:focus {
+    border-color: var(--navy);
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    padding: 10px 22px; border-radius: 9px; border: none;
+    cursor: pointer; font-weight: 700; font-size: 14px;
+    font-family: inherit; transition: opacity .15s;
+  }
+  .btn:hover:not(:disabled) { opacity: .88; }
+  .btn:disabled { background: #D0D5DD !important; cursor: not-allowed; }
+  .btn-navy { background: var(--navy); color: #fff; }
+  .btn-white { background: #fff; color: var(--navy); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-gray { background: #6B7280; color: #fff; }
+  .btn-full { width: 100%; padding: 13px; }
+
+  /* ── RADIO CARDS ── */
+  .radio-group { display: flex; flex-direction: column; gap: 7px; }
+  .radio-opt {
+    display: flex; align-items: flex-start; gap: 10px;
+    cursor: pointer; padding: 10px 13px; border-radius: 9px;
+    border: 2px solid #E0E0E0; background: #F9FAFB;
+    transition: all .15s;
+  }
+  .radio-opt input { margin-top: 2px; flex-shrink: 0; }
+  .radio-opt span { font-size: 13px; color: #444; line-height: 1.6; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { background: #E0E0E0; border-radius: 10px; height: 6px; margin-bottom: 24px; }
+  .progress-bar { background: var(--navy); border-radius: 10px; height: 6px; transition: width .3s; }
+
+  /* ── STATUS BADGE ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  }
+
+  /* ── GRID HELPERS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+
+  /* ── ALERT ── */
+  .alert {
+    padding: 12px 16px; border-radius: 10px; font-size: 13px;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .alert-success { background: #E8F5E9; border: 1px solid #A5D6A7; color: var(--green); }
+  .alert-error { background: #FFEBEE; border: 1px solid #EF9A9A; color: var(--red); }
+  .alert-info { background: #E8F4FD; border: 1px solid #90CAF9; color: var(--navy); }
+
+  /* ── PAINEL TABLE ── */
+  .painel-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .painel-table th {
+    background: var(--navy); color: #fff;
+    padding: 8px 10px; text-align: left; white-space: nowrap;
+  }
+  .painel-table td { padding: 8px 10px; border-bottom: 1px solid #F0F0F0; }
+  .painel-table tr:nth-child(even) td { background: #F8FAFC; }
+
+  /* ── TURNO RADIO ── */
+  .turno-group { display: flex; gap: 10px; }
+  .turno-opt {
+    flex: 1; padding: 10px 14px; border-radius: 9px; cursor: pointer;
+    border: 2px solid #E0E0E0; background: #fff; text-align: center;
+    font-size: 13px; font-family: inherit; transition: all .15s;
+  }
+
+  /* ── LOADING SPINNER ── */
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    main { padding: 16px 12px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .turno-group { flex-direction: column; }
+    header { padding: 12px 16px; }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    header, .no-print, .nav-tabs, .breadcrumb { display: none !important; }
+    body { background: #fff; }
+    main { padding: 0; max-width: 100%; }
+    .card { box-shadow: none; }
+  }
+
+  /* ── SECTION VISIBILITY ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════════════ -->
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:26px;">🏫</span>
+    <div>
+      <div class="header-title">Instrumento de Classificação de Suporte</div>
+      <div class="header-sub">E.M. Regina Celi da Silva Cerdeira · Inclusão em Foco · 2026</div>
+    </div>
+  </div>
+  <!-- Breadcrumb (questionário) -->
+  <div id="breadcrumb-wrap" class="breadcrumb">
+    <div class="bc-step active" id="bc-instrucoes">Instruções</div>
+    <div class="bc-sep">›</div>
+    <div class="bc-step" id="bc-identificacao">Identificação</div>
+    <div class="bc-sep">›</div>
+    <div class="bc-step" id="bc-avaliacao">Avaliação</div>
+    <div class="bc-sep">›</div>
+    <div class="bc-step" id="bc-relatorio">Relatório</div>
+  </div>
+  <!-- Nav tabs (painel) -->
+  <div id="nav-tabs-wrap" class="nav-tabs" style="display:none;">
+    <button class="nav-tab active" onclick="abrirAba('questionario')">📋 Questionário</button>
+    <button class="nav-tab" onclick="abrirAba('painel')">📊 Painel da Equipe</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ TELA 0: INSTRUCOES ═══════════════════════════════════════════════════════ -->
+<div id="screen-instrucoes" class="screen active">
+  <div style="background:linear-gradient(135deg,#1A3A6E,#2E75B6);border-radius:16px;padding:32px 36px;margin-bottom:24px;color:#fff;">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;opacity:.75;margin-bottom:8px;">
+      E.M. Regina Celi da Silva Cerdeira · Centro de Referência em Educação Inclusiva · 2026
+    </div>
+    <div style="font-size:24px;font-weight:900;line-height:1.2;margin-bottom:10px;">
+      📋 Instrumento de Avaliação e Classificação<br/>de Suporte para Alunos com Deficiência
+    </div>
+    <div style="font-size:14px;opacity:.88;line-height:1.6;">
+      Destinado ao Professor Regente · Plano de Ação: Inclusão em Foco (RCSC/2026)
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--navy);margin-bottom:16px;">
+    <div style="font-weight:800;font-size:16px;color:var(--navy);margin-bottom:10px;">🎯 Para que serve este instrumento?</div>
+    <p style="font-size:14px;color:var(--gray-text);line-height:1.8;margin-bottom:10px;">
+      Este questionário foi elaborado para que você, professor(a) regente, possa <strong>avaliar cada aluno com deficiência da sua turma</strong> e indicar o <strong>nível de suporte pedagógico e de vida diária</strong> que ele necessita.
+    </p>
+    <p style="font-size:14px;color:var(--gray-text);line-height:1.8;">
+      Ao final, o sistema gera um <strong>relatório de prioridade de atendimento</strong> e envia os dados para a Secretaria e Equipe Diretiva.
+    </p>
+  </div>
+
+  <!-- Níveis -->
+  <div style="font-weight:800;font-size:16px;color:#1A202C;margin-bottom:14px;">📊 Os três níveis de suporte</div>
+  <div id="niveis-wrap"></div>
+
+  <!-- Como responder -->
+  <div class="card" style="margin-bottom:24px;border-left:4px solid var(--amber);">
+    <div style="font-weight:800;font-size:15px;color:var(--amber);margin-bottom:12px;">📌 Como responder com precisão</div>
+    <div id="dicas-wrap"></div>
+  </div>
+
+  <div style="background:var(--navy);border-radius:12px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+    <div style="color:#fff;">
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px;">Pronto para começar?</div>
+      <div style="font-size:13px;opacity:.8;">Você avaliará cada aluno em 12 perguntas distribuídas em 4 domínios.</div>
+    </div>
+    <button class="btn btn-white" style="font-size:15px;padding:12px 28px;" onclick="irPara('identificacao')">
+      Iniciar avaliação →
+    </button>
+  </div>
+</div><!-- /screen-instrucoes -->
+
+<!-- ══ TELA 1: IDENTIFICAÇÃO ════════════════════════════════════════════════════ -->
+<div id="screen-identificacao" class="screen">
+  <div class="card" style="border-top:4px solid var(--navy);max-width:640px;margin:0 auto;">
+    <div style="font-weight:800;font-size:18px;color:var(--navy);margin-bottom:6px;">👩‍🏫 Identificação do Professor e da Turma</div>
+    <p style="font-size:13px;color:#888;margin-bottom:22px;">Estas informações aparecerão no relatório final para arquivamento.</p>
+
+    <div style="margin-bottom:16px;">
+      <label class="lbl">Nome completo do(a) Professor(a) *</label>
+      <input type="text" id="id-prof" placeholder="Ex: Profª Marcelle Souza" />
+    </div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div>
+        <label class="lbl">Turma *</label>
+        <input type="text" id="id-turma" placeholder="Ex: 3° Ano – Turma 301" />
+      </div>
+      <div>
+        <label class="lbl">Data *</label>
+        <input type="text" id="id-data" />
+      </div>
+    </div>
+    <div style="margin-bottom:22px;">
+      <label class="lbl">Turno *</label>
+      <div class="turno-group" id="turno-group">
+        <button class="turno-opt" data-turno="1° Turno – Manhã (08h-12h)" onclick="selecionarTurno(this)">1° Turno – Manhã (08h-12h)</button>
+        <button class="turno-opt" data-turno="2° Turno – Tarde (13h-17h)" onclick="selecionarTurno(this)">2° Turno – Tarde (13h-17h)</button>
+      </div>
+    </div>
+    <button class="btn btn-navy btn-full" id="btn-continuar-id" onclick="continuar_identificacao()" disabled>
+      Continuar → Adicionar alunos
+    </button>
+  </div>
+</div>
+
+<!-- ══ TELA 2: GESTÃO DE ALUNOS ═════════════════════════════════════════════════ -->
+<div id="screen-alunos" class="screen">
+  <div style="background:#F0F4FF;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+    <div style="flex:1;">
+      <div style="font-weight:700;color:var(--navy);font-size:14px;" id="info-prof-nome">👩‍🏫</div>
+      <div style="font-size:12px;color:#666;" id="info-turma-turno"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="background:var(--navy);color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;" id="badge-total">0 aluno(s)</div>
+      <div id="badge-avaliados" style="background:var(--orange);color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;">0/0 avaliado(s)</div>
+    </div>
+  </div>
+
+  <!-- Form adicionar aluno -->
+  <div class="card" style="margin-bottom:16px;border-left:4px solid var(--green);" id="form-novo-aluno" style="display:none;">
+    <div style="font-weight:700;font-size:15px;color:var(--green);margin-bottom:14px;">➕ Adicionar aluno com deficiência</div>
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div>
+        <label class="lbl">Nome completo do aluno *</label>
+        <input type="text" id="novo-nome" placeholder="Nome do aluno" />
+      </div>
+      <div>
+        <label class="lbl">Deficiência / CID (opcional)</label>
+        <input type="text" id="nova-def" placeholder="Ex: TEA – F84.0" />
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-gray" onclick="cancelarNovoAluno()">Cancelar</button>
+      <button class="btn btn-green" style="flex:1;" onclick="adicionarAluno()">✅ Adicionar aluno</button>
+    </div>
+  </div>
+
+  <!-- Lista de alunos -->
+  <div id="lista-alunos"></div>
+
+  <!-- Barra de ações -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+    <button class="btn btn-green" onclick="mostrarFormNovoAluno()">➕ Adicionar aluno</button>
+    <button class="btn btn-navy" id="btn-gerar-relatorio" style="flex:1;" onclick="irPara('relatorio')" disabled>
+      📊 Gerar Relatório →
+    </button>
+  </div>
+</div>
+
+<!-- ══ TELA 2b: FORMULÁRIO DE AVALIAÇÃO ════════════════════════════════════════ -->
+<div id="screen-avaliar" class="screen">
+  <div style="background:#F0F4FF;border:1px solid #BDD7EE;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-weight:800;font-size:17px;color:var(--navy);" id="avaliar-nome"></div>
+      <div style="font-size:12px;color:#666;margin-top:2px;" id="avaliar-def"></div>
+    </div>
+    <div id="avaliar-progresso" style="background:var(--navy);color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;">0/12</div>
+  </div>
+  <div class="progress-wrap"><div class="progress-bar" id="barra-progresso" style="width:0%"></div></div>
+  <div id="dominios-wrap"></div>
+  <div style="display:flex;gap:12px;margin-top:8px;">
+    <button class="btn btn-gray" onclick="cancelarAvaliacao()">← Cancelar</button>
+    <button class="btn btn-navy btn-full" id="btn-salvar-avaliacao" onclick="salvarAvaliacao()" disabled>
+      Responda todas as perguntas para salvar
+    </button>
+  </div>
+</div>
+
+<!-- ══ TELA 3: RELATÓRIO ════════════════════════════════════════════════════════ -->
+<div id="screen-relatorio" class="screen">
+  <div style="background:var(--navy);border-radius:12px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;" class="no-print">
+    <div style="color:#fff;font-weight:700;" id="relatorio-title">📊 Relatório gerado</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="irPara('alunos')" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:13px;font-family:inherit;">← Voltar</button>
+      <button class="btn btn-white" style="font-size:13px;padding:7px 18px;" onclick="window.print()">🖨️ Imprimir / PDF</button>
+      <button class="btn btn-green" style="font-size:13px;padding:7px 18px;" id="btn-enviar" onclick="enviarParaSupabase()">
+        ☁️ Enviar para nuvem
+      </button>
+    </div>
+  </div>
+  <div id="relatorio-conteudo"></div>
+</div>
+
+<!-- ══ TELA PAINEL DA EQUIPE ════════════════════════════════════════════════════ -->
+<div id="screen-painel" class="screen" style="display:none;">
+  <div class="card" style="margin-bottom:20px;border-top:4px solid var(--navy);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-weight:800;font-size:18px;color:var(--navy);">📊 Painel da Equipe Diretiva</div>
+        <div style="font-size:12px;color:#888;">Todas as avaliações enviadas pelos professores</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <select id="filtro-turma" onchange="aplicarFiltros()" style="font-size:12px;padding:6px 10px;">
+          <option value="">Todas as turmas</option>
+        </select>
+        <select id="filtro-suporte" onchange="aplicarFiltros()" style="font-size:12px;padding:6px 10px;">
+          <option value="">Todos os suportes</option>
+          <option value="1">🔴 Suporte 1</option>
+          <option value="2">🟠 Suporte 2</option>
+          <option value="3">🟢 Suporte 3</option>
+        </select>
+        <button class="btn btn-navy" style="font-size:12px;padding:7px 14px;" onclick="carregarPainel()">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div id="painel-resumo" class="grid-4" style="margin-bottom:20px;"></div>
+    <div id="painel-loading" class="alert alert-info" style="display:none;">⏳ Carregando dados...</div>
+    <div id="painel-erro" class="alert alert-error" style="display:none;"></div>
+    <div style="overflow-x:auto;">
+      <table class="painel-table">
+        <thead>
+          <tr>
+            <th>Professor(a)</th>
+            <th>Turma</th>
+            <th>Turno</th>
+            <th>Data</th>
+            <th>Aluno</th>
+            <th>Deficiência</th>
+            <th>Classificação</th>
+            <th>Pontos</th>
+          </tr>
+        </thead>
+        <tbody id="painel-tbody"></tbody>
+      </table>
+    </div>
+    <div id="painel-vazio" style="text-align:center;padding:40px;color:#888;display:none;">
+      Nenhum registro encontrado.
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ══ CONFIGURAÇÃO SUPABASE ══════════════════════════════════════════════════════
+// ⚠️  SUBSTITUA os dois valores abaixo pelos dados do seu projeto Supabase
+const SUPABASE_URL = 'https://vjxsvcohipeyepfbkmro.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_gn6TBJ888I6cT137tPc3DA_-Biu4ipo';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ══ DADOS DE REFERÊNCIA ════════════════════════════════════════════════════════
+const DOMINIOS = [
+  {
+    id: "cognitivoComportamental",
+    titulo: "Domínio Cognitivo e Comportamental",
+    descricao: "Avalia a capacidade de aprendizagem, comunicação e regulação emocional/comportamental do aluno.",
+    cor: "#1A3A6E", bg: "#E8F4FD",
+    perguntas: [
+      { id:"cc1", texto:"O aluno consegue acompanhar as instruções orais da professora durante a aula?",
+        opcoes:[{v:3,t:"Não acompanha — precisa de instrução individualizada e constante"},{v:2,t:"Acompanha parcialmente — precisa de repetição ou suporte visual"},{v:1,t:"Acompanha com pequenas adaptações ou reforços pontuais"}]},
+      { id:"cc2", texto:"Como o aluno reage a mudanças de rotina ou situações inesperadas em sala?",
+        opcoes:[{v:3,t:"Crises frequentes ou comportamentos que interrompem a turma"},{v:2,t:"Apresenta resistência ou agitação, mas se recupera com apoio"},{v:1,t:"Adapta-se com leve desconforto ou não reage significativamente"}]},
+      { id:"cc3", texto:"O aluno consegue realizar atividades pedagógicas propostas em sala?",
+        opcoes:[{v:3,t:"Não realiza sem mediação presencial e direta do profissional de apoio"},{v:2,t:"Realiza parcialmente — precisa de adaptação de material ou orientação próxima"},{v:1,t:"Realiza com mínimas adaptações ou sem necessidade de suporte contínuo"}]},
+      { id:"cc4", texto:"O aluno se comunica com a professora e os colegas?",
+        opcoes:[{v:3,t:"Não se comunica verbalmente; usa gestos, choro ou comportamento para expressar necessidades"},{v:2,t:"Comunica-se com limitações — vocabulário restrito, CAA ou comunicação alternativa"},{v:1,t:"Comunica-se de forma compreensível, mesmo com particularidades"}]},
+    ]
+  },
+  {
+    id: "autonomiaFisica",
+    titulo: "Domínio de Autonomia e Vida Diária",
+    descricao: "Avalia a independência do aluno em higiene, alimentação, deslocamento e autocuidado.",
+    cor: "#2E7D32", bg: "#E8F5E9",
+    perguntas: [
+      { id:"af1", texto:"O aluno necessita de apoio para higiene pessoal (troca, banheiro, higiene oral)?",
+        opcoes:[{v:3,t:"Sim — depende totalmente de um adulto para todos os cuidados de higiene"},{v:2,t:"Necessita de auxílio parcial ou supervisão próxima"},{v:1,t:"É autônomo ou necessita apenas de lembretes pontuais"}]},
+      { id:"af2", texto:"O aluno consegue se alimentar de forma independente?",
+        opcoes:[{v:3,t:"Não — precisa de assistência direta na alimentação"},{v:2,t:"Alimenta-se com alguma assistência (abrir embalagens, adaptações)"},{v:1,t:"Alimenta-se de forma independente"}]},
+      { id:"af3", texto:"Como é o deslocamento do aluno dentro da escola (corredores, pátio, refeitório)?",
+        opcoes:[{v:3,t:"Depende totalmente de acompanhamento — usa cadeira de rodas, andador ou não tem segurança sozinho"},{v:2,t:"Desloca-se com supervisão próxima ou apoio parcial"},{v:1,t:"Desloca-se de forma independente ou com orientação leve"}]},
+    ]
+  },
+  {
+    id: "participacaoSocial",
+    titulo: "Domínio de Participação e Interação Social",
+    descricao: "Avalia como o aluno interage com colegas e participa das atividades coletivas.",
+    cor: "#6A0572", bg: "#F3E5F5",
+    perguntas: [
+      { id:"ps1", texto:"O aluno participa das atividades coletivas da turma (recreio, projetos, rodas)?",
+        opcoes:[{v:3,t:"Não participa — fica à margem ou recusa categoricamente as atividades coletivas"},{v:2,t:"Participa com mediação ativa do profissional de apoio"},{v:1,t:"Participa com pequenas adaptações ou naturalmente"}]},
+      { id:"ps2", texto:"O aluno apresenta comportamentos que coloquem a si mesmo ou a colegas em risco?",
+        opcoes:[{v:3,t:"Sim, com frequência — autolesão, agressividade física ou situações de risco constante"},{v:2,t:"Ocasionalmente — episódios pontuais que requerem intervenção"},{v:1,t:"Raramente ou nunca"}]},
+      { id:"ps3", texto:"Como é a interação do aluno com os colegas de turma?",
+        opcoes:[{v:3,t:"Isola-se completamente ou provoca conflitos frequentes com colegas"},{v:2,t:"Interage com limitações — precisa de mediação para relações positivas"},{v:1,t:"Interage de forma razoável, mesmo com peculiaridades sociais"}]},
+    ]
+  },
+  {
+    id: "impactoTurma",
+    titulo: "Impacto na Dinâmica da Turma",
+    descricao: "Avalia o quanto a presença do aluno sem apoio adequado impacta o andamento da turma.",
+    cor: "#B45309", bg: "#FEF3C7",
+    perguntas: [
+      { id:"it1", texto:"Sem um profissional de apoio presente, o aluno consegue permanecer na sala com segurança?",
+        opcoes:[{v:3,t:"Não — sai da sala, coloca-se em risco ou inviabiliza a aula para os demais"},{v:2,t:"Permanece, mas com dificuldade — demanda atenção constante da professora"},{v:1,t:"Permanece com tranquilidade — a professora consegue atender a turma normalmente"}]},
+      { id:"it2", texto:"Com que frequência o aluno demanda atenção individualizada da professora durante o tempo de aula?",
+        opcoes:[{v:3,t:"Continuamente — a professora não consegue atender os demais alunos"},{v:2,t:"Com frequência — interrompe o andamento da aula várias vezes"},{v:1,t:"Raramente — a professora consegue conduzir a turma normalmente"}]},
+    ]
+  },
+];
+
+const TOTAL_PERGUNTAS = DOMINIOS.reduce((t,d)=>t+d.perguntas.length,0);
+const PONTOS_MAX = TOTAL_PERGUNTAS * 3;
+
+// ══ ESTADO GLOBAL ══════════════════════════════════════════════════════════════
+let estado = {
+  identificacao: null,
+  alunos: [],
+  alunoAtual: null,
+  respostasAtuais: {},
+  telaAtual: 'instrucoes'
+};
+
+// ══ FUNÇÕES DE NAVEGAÇÃO ═══════════════════════════════════════════════════════
+function irPara(tela) {
+  // validações de pré-condição
+  if (tela === 'relatorio') {
+    const avaliados = estado.alunos.filter(a=>a.suporte);
+    if (avaliados.length === 0) return;
+  }
+
+  // ocultar todas as telas do questionário
+  ['instrucoes','identificacao','alunos','avaliar','relatorio'].forEach(t => {
+    const el = document.getElementById('screen-'+t);
+    if (el) { el.classList.remove('active'); el.style.display = ''; }
+  });
+  const painel = document.getElementById('screen-painel');
+  if (painel) painel.style.display = 'none';
+
+  const alvo = document.getElementById('screen-'+tela);
+  if (alvo) { alvo.classList.add('active'); }
+
+  estado.telaAtual = tela;
+  atualizarBreadcrumb(tela);
+}
+
+function abrirAba(aba) {
+  // Mostrar/ocultar header elements
+  document.getElementById('breadcrumb-wrap').style.display = aba === 'questionario' ? 'flex' : 'none';
+
+  // Atualizar tabs
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    t.classList.toggle('active', (i===0 && aba==='questionario') || (i===1 && aba==='painel'));
+  });
+
+  if (aba === 'painel') {
+    ['instrucoes','identificacao','alunos','avaliar','relatorio'].forEach(t => {
+      const el = document.getElementById('screen-'+t);
+      if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+    });
+    const p = document.getElementById('screen-painel');
+    p.style.display = 'block';
+    carregarPainel();
+  } else {
+    document.getElementById('screen-painel').style.display = 'none';
+    ['instrucoes','identificacao','alunos','avaliar','relatorio'].forEach(t => {
+      const el = document.getElementById('screen-'+t);
+      if (el) el.style.display = '';
+    });
+    irPara(estado.telaAtual || 'instrucoes');
+  }
+}
+
+function atualizarBreadcrumb(tela) {
+  const ordem = ['instrucoes','identificacao','alunos','relatorio'];
+  const idx = ordem.indexOf(tela === 'avaliar' ? 'alunos' : tela);
+  ordem.forEach((t,i) => {
+    const el = document.getElementById('bc-'+t);
+    if (el) el.classList.toggle('active', i <= idx);
+  });
+}
+
+// ══ IDENTIFICAÇÃO ══════════════════════════════════════════════════════════════
+let turnoSelecionado = '';
+
+function selecionarTurno(btn) {
+  document.querySelectorAll('.turno-opt').forEach(b => {
+    b.style.border = '2px solid #E0E0E0';
+    b.style.background = '#fff'; b.style.color = '#555'; b.style.fontWeight = '400';
+  });
+  btn.style.border = '2px solid var(--navy)';
+  btn.style.background = '#E8F4FD'; btn.style.color = 'var(--navy)'; btn.style.fontWeight = '700';
+  turnoSelecionado = btn.dataset.turno;
+  validarIdentificacao();
+}
+
+function validarIdentificacao() {
+  const ok = document.getElementById('id-prof').value.trim() &&
+             document.getElementById('id-turma').value.trim() &&
+             turnoSelecionado;
+  document.getElementById('btn-continuar-id').disabled = !ok;
+}
+
+function continuar_identificacao() {
+  estado.identificacao = {
+    prof: document.getElementById('id-prof').value.trim(),
+    turma: document.getElementById('id-turma').value.trim(),
+    turno: turnoSelecionado,
+    data: document.getElementById('id-data').value
+  };
+  document.getElementById('info-prof-nome').textContent = '👩‍🏫 ' + estado.identificacao.prof;
+  document.getElementById('info-turma-turno').textContent =
+    estado.identificacao.turma + ' · ' + estado.identificacao.turno + ' · ' + estado.identificacao.data;
+  atualizarListaAlunos();
+  irPara('alunos');
+}
+
+// ══ ALUNOS ══════════════════════════════════════════════════════════════════════
+function mostrarFormNovoAluno() {
+  document.getElementById('form-novo-aluno').style.display = 'block';
+  document.getElementById('novo-nome').focus();
+}
+function cancelarNovoAluno() {
+  document.getElementById('form-novo-aluno').style.display = 'none';
+  document.getElementById('novo-nome').value = '';
+  document.getElementById('nova-def').value = '';
+}
+
+function adicionarAluno() {
+  const nome = document.getElementById('novo-nome').value.trim();
+  if (!nome) return;
+  const def = document.getElementById('nova-def').value.trim();
+  estado.alunos.push({ id: Date.now(), nome, deficiencia: def, suporte: null, respostas: {}, pontos: 0 });
+  cancelarNovoAluno();
+  atualizarListaAlunos();
+}
+
+function removerAluno(id) {
+  estado.alunos = estado.alunos.filter(a=>a.id !== id);
+  atualizarListaAlunos();
+}
+
+function atualizarListaAlunos() {
+  const avaliados = estado.alunos.filter(a=>a.suporte);
+  document.getElementById('badge-total').textContent = estado.alunos.length + ' aluno(s)';
+  const badgeAv = document.getElementById('badge-avaliados');
+  badgeAv.textContent = avaliados.length + '/' + estado.alunos.length + ' avaliado(s)';
+  badgeAv.style.background = (avaliados.length===estado.alunos.length && estado.alunos.length>0) ? 'var(--green)' : 'var(--orange)';
+
+  const btnGerar = document.getElementById('btn-gerar-relatorio');
+  btnGerar.disabled = avaliados.length === 0;
+
+  const wrap = document.getElementById('lista-alunos');
+  if (estado.alunos.length === 0) {
+    wrap.innerHTML = '<div class="alert alert-info">Nenhum aluno adicionado. Clique em "Adicionar aluno" para começar.</div>';
+    return;
+  }
+
+  wrap.innerHTML = estado.alunos.map(al => {
+    const avaliado = !!al.suporte;
+    const cor = avaliado ? al.suporte.cor : '#888';
+    const badge = avaliado
+      ? `<span style="background:${al.suporte.bg};color:${al.suporte.cor};border:1px solid ${al.suporte.cor}55;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;">${al.suporte.emoji} ${al.suporte.label}</span>`
+      : `<span style="background:#F0F0F0;color:#888;border-radius:20px;padding:3px 10px;font-size:11px;">Não avaliado</span>`;
+    return `
+      <div style="background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-left:4px solid ${cor};">
+        <div>
+          <div style="font-weight:700;font-size:14px;color:#1A202C;">${al.nome}</div>
+          <div style="font-size:12px;color:#888;">${al.deficiencia || 'Sem CID informado'}</div>
+          <div style="margin-top:6px;">${badge}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-navy" style="font-size:12px;padding:7px 14px;" onclick="iniciarAvaliacao(${al.id})">
+            ${avaliado ? '✏️ Reeditar' : '📝 Avaliar'}
+          </button>
+          <button style="background:#FEE2E2;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;color:#C62828;font-family:inherit;" onclick="removerAluno(${al.id})">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ══ AVALIAÇÃO ══════════════════════════════════════════════════════════════════
+function iniciarAvaliacao(id) {
+  const al = estado.alunos.find(a=>a.id===id);
+  estado.alunoAtual = al;
+  estado.respostasAtuais = al.respostas ? {...al.respostas} : {};
+  document.getElementById('avaliar-nome').textContent = al.nome;
+  document.getElementById('avaliar-def').textContent = al.deficiencia ? al.deficiencia + ' · Avaliação individual de suporte' : 'Avaliação individual de suporte';
+  renderizarDominios();
+  irPara('avaliar');
+}
+
+function cancelarAvaliacao() { irPara('alunos'); }
+
+function renderizarDominios() {
+  const wrap = document.getElementById('dominios-wrap');
+  wrap.innerHTML = DOMINIOS.map((dom, di) => `
+    <div style="background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:22px 26px;margin-bottom:16px;border-left:4px solid ${dom.cor};">
+      <div style="font-weight:800;font-size:15px;color:${dom.cor};margin-bottom:6px;">${dom.titulo}</div>
+      <p style="font-size:12px;color:#666;margin-bottom:16px;line-height:1.6;">${dom.descricao}</p>
+      ${dom.perguntas.map((perg, pi) => `
+        <div style="margin-bottom:${pi<dom.perguntas.length-1?'20px':'0'};padding-bottom:${pi<dom.perguntas.length-1?'20px':'0'};border-bottom:${pi<dom.perguntas.length-1?'1px solid #F0F0F0':'none'};">
+          <div style="font-weight:600;font-size:13px;color:#1A202C;margin-bottom:10px;line-height:1.6;">
+            <span style="background:${dom.bg};color:${dom.cor};border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;margin-right:7px;">${di+1}.${pi+1}</span>
+            ${perg.texto}
+          </div>
+          <div class="radio-group">
+            ${perg.opcoes.map(op => {
+              const sel = estado.respostasAtuais[perg.id] === op.v;
+              const corOp = op.v===3?'#C62828':op.v===2?'#E65100':'#2E7D32';
+              return `
+                <label class="radio-opt" style="border-color:${sel?corOp:'#E0E0E0'};background:${sel?corOp+'14':'#F9FAFB'};" onclick="selecionarResposta('${perg.id}', ${op.v}, this, '${corOp}')">
+                  <input type="radio" name="${perg.id}" value="${op.v}" ${sel?'checked':''} style="pointer-events:none;" />
+                  <span style="color:${sel?corOp:'#444'};font-weight:${sel?700:400};">${op.t}</span>
+                </label>`;
+            }).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  atualizarProgressoAvaliacao();
+}
+
+function selecionarResposta(pergId, valor, labelEl, cor) {
+  estado.respostasAtuais[pergId] = valor;
+  // Resetar visuais do grupo
+  const grupo = labelEl.closest('.radio-group');
+  grupo.querySelectorAll('.radio-opt').forEach(l => {
+    l.style.borderColor = '#E0E0E0'; l.style.background = '#F9FAFB';
+    l.querySelector('span').style.color = '#444';
+    l.querySelector('span').style.fontWeight = '400';
+  });
+  labelEl.style.borderColor = cor; labelEl.style.background = cor + '14';
+  labelEl.querySelector('span').style.color = cor;
+  labelEl.querySelector('span').style.fontWeight = '700';
+  atualizarProgressoAvaliacao();
+}
+
+function atualizarProgressoAvaliacao() {
+  const respondidas = Object.keys(estado.respostasAtuais).length;
+  document.getElementById('avaliar-progresso').textContent = respondidas + '/' + TOTAL_PERGUNTAS;
+  const pct = (respondidas / TOTAL_PERGUNTAS) * 100;
+  document.getElementById('barra-progresso').style.width = pct + '%';
+  const btn = document.getElementById('btn-salvar-avaliacao');
+  btn.disabled = respondidas < TOTAL_PERGUNTAS;
+  btn.textContent = respondidas >= TOTAL_PERGUNTAS
+    ? '✅ Salvar avaliação deste aluno'
+    : `Responda mais ${TOTAL_PERGUNTAS-respondidas} pergunta(s) para salvar`;
+}
+
+function salvarAvaliacao() {
+  const pontos = Object.values(estado.respostasAtuais).reduce((t,v)=>t+v,0);
+  const suporte = calcularSuporte(pontos);
+  const al = estado.alunos.find(a=>a.id===estado.alunoAtual.id);
+  al.respostas = {...estado.respostasAtuais};
+  al.pontos = pontos;
+  al.suporte = suporte;
+  al.totalPerguntas = TOTAL_PERGUNTAS;
+  estado.alunoAtual = null;
+  estado.respostasAtuais = {};
+  atualizarListaAlunos();
+  irPara('alunos');
+}
+
+// ══ CÁLCULO DE SUPORTE ═════════════════════════════════════════════════════════
+function calcularSuporte(pontos) {
+  const pct = pontos / PONTOS_MAX;
+  if (pct >= 0.65) return { nivel:1, cor:"#C62828", bg:"#FFEBEE", emoji:"🔴", label:"Suporte 1 – Totalmente Dependente" };
+  if (pct >= 0.35) return { nivel:2, cor:"#E65100", bg:"#FFF3E0", emoji:"🟠", label:"Suporte 2 – Autonomia Limitada" };
+  return              { nivel:3, cor:"#2E7D32", bg:"#E8F5E9", emoji:"🟢", label:"Suporte 3 – Autonomia Considerável" };
+}
+
+function pesoPrioridade(al) {
+  return al.suporte.nivel===1 ? al.pontos+1000 : al.suporte.nivel===2 ? al.pontos+500 : al.pontos;
+}
+
+// ══ RELATÓRIO ══════════════════════════════════════════════════════════════════
+function renderizarRelatorio() {
+  const avaliados = estado.alunos.filter(a=>a.suporte).sort((a,b)=>pesoPrioridade(b)-pesoPrioridade(a));
+  const s1 = avaliados.filter(a=>a.suporte.nivel===1);
+  const s2 = avaliados.filter(a=>a.suporte.nivel===2);
+  const s3 = avaliados.filter(a=>a.suporte.nivel===3);
+  document.getElementById('relatorio-title').textContent = '📊 Relatório gerado — ' + avaliados.length + ' aluno(s)';
+
+  document.getElementById('relatorio-conteudo').innerHTML = `
+    <!-- Cabeçalho institucional -->
+    <div style="background:var(--navy);color:#fff;border-radius:10px 10px 0 0;padding:10px 16px;font-size:9px;font-weight:700;text-align:center;">
+      ESTADO DO RIO DE JANEIRO · PREFEITURA MUNICIPAL DE DUQUE DE CAXIAS · SECRETARIA MUNICIPAL DE EDUCAÇÃO<br/>
+      ESCOLA MUNICIPAL REGINA CELI DA SILVA CERDEIRA – CENTRO DE REFERÊNCIA EM EDUCAÇÃO INCLUSIVA
+    </div>
+    <div style="border:1px solid var(--navy);border-top:none;border-radius:0 0 10px 10px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--navy);">Relatório de Prioridade de Apoio à Inclusão</div>
+        <div style="font-size:11px;color:#666;margin-top:3px;">Instrumento de Avaliação e Classificação de Suporte · 2026</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:9px;color:#888;">DATA DE GERAÇÃO</div>
+        <div style="font-weight:700;color:var(--navy);">${estado.identificacao.data}</div>
+      </div>
+    </div>
+
+    <!-- Dados da turma -->
+    <div class="grid-3" style="margin-bottom:16px;">
+      ${[['Professor(a)',estado.identificacao.prof],['Turma',estado.identificacao.turma],['Turno',estado.identificacao.turno]].map(([l,v])=>`
+        <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px 12px;">
+          <div style="font-size:9px;color:#888;font-weight:700;text-transform:uppercase;">${l}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--navy);margin-top:2px;">${v}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Resumo quantitativo -->
+    <div class="grid-4" style="margin-bottom:20px;">
+      ${[
+        {l:'Total avaliado',v:avaliados.length,cor:'#1A3A6E',bg:'#E8F4FD'},
+        {l:'🔴 Suporte 1',v:s1.length,cor:'#C62828',bg:'#FFEBEE'},
+        {l:'🟠 Suporte 2',v:s2.length,cor:'#E65100',bg:'#FFF3E0'},
+        {l:'🟢 Suporte 3',v:s3.length,cor:'#2E7D32',bg:'#E8F5E9'},
+      ].map(c=>`
+        <div style="background:${c.bg};border-radius:10px;padding:12px 14px;text-align:center;">
+          <div style="font-size:26px;font-weight:900;color:${c.cor};">${c.v}</div>
+          <div style="font-size:11px;color:${c.cor};font-weight:600;">${c.l}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Tabela de prioridade -->
+    <div style="font-weight:800;font-size:14px;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--navy);">
+      📋 Ordem de Prioridade de Atendimento
+    </div>
+    <p style="font-size:11px;color:#666;margin-bottom:14px;line-height:1.6;">
+      Os alunos estão ordenados do maior para o menor grau de necessidade de apoio especializado.
+      Esta ordem deve orientar a designação prioritária dos profissionais de apoio à inclusão (AAI 1, AAI 2, Ax EI).
+    </p>
+    <div style="overflow-x:auto;margin-bottom:20px;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead>
+          <tr style="background:var(--navy);color:#fff;">
+            <th style="padding:8px 10px;text-align:center;width:36px;">Prior.</th>
+            <th style="padding:8px 10px;text-align:left;">Aluno(a)</th>
+            <th style="padding:8px 10px;text-align:left;">Deficiência/CID</th>
+            <th style="padding:8px 10px;text-align:center;">Classificação</th>
+            <th style="padding:8px 10px;text-align:center;">Pontos</th>
+            <th style="padding:8px 10px;text-align:left;">Tipo de apoio indicado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${avaliados.map((al,i)=>{
+            const tipo = al.suporte.nivel===1 ? 'AAI 1 exclusivo (dedicação integral)' :
+                         al.suporte.nivel===2 ? 'AAI 1 ou Ax EI (compartilhado possível)' :
+                         'Apoio volante ou compartilhado';
+            return `
+              <tr style="background:${i%2===0?'#fff':'#F8FAFC'};">
+                <td style="padding:8px 10px;text-align:center;font-weight:800;font-size:16px;color:var(--navy);">${i+1}º</td>
+                <td style="padding:8px 10px;font-weight:700;">${al.nome}</td>
+                <td style="padding:8px 10px;color:#555;font-size:10px;">${al.deficiencia||'—'}</td>
+                <td style="padding:8px 10px;text-align:center;">
+                  <span style="background:${al.suporte.bg};color:${al.suporte.cor};border:1px solid ${al.suporte.cor}55;border-radius:20px;padding:3px 10px;font-weight:700;font-size:10px;white-space:nowrap;">
+                    ${al.suporte.emoji} ${al.suporte.label}
+                  </span>
+                </td>
+                <td style="padding:8px 10px;text-align:center;font-weight:700;color:${al.suporte.cor};">${al.pontos}/${PONTOS_MAX}</td>
+                <td style="padding:8px 10px;font-size:10px;color:#444;">${tipo}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Assinaturas -->
+    <div class="grid-3" style="margin-top:20px;">
+      ${[['Professor(a) Responsável',estado.identificacao.prof],['Coordenação Pedagógica',''],['Direção','']].map(([t,s])=>`
+        <div style="text-align:center;">
+          <div style="border-bottom:1px solid #333;margin-bottom:5px;height:36px;"></div>
+          <div style="font-size:10px;font-weight:700;color:var(--navy);">${t}</div>
+          ${s?`<div style="font-size:9px;color:#666;">${s}</div>`:''}
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:16px;padding-top:10px;border-top:1px dashed #ccc;display:flex;justify-content:space-between;font-size:9px;color:#aaa;">
+      <span>Instrumento de Avaliação de Suporte · E.M. Regina Celi da Silva Cerdeira · 2026</span>
+      <span>Gerado em: ${estado.identificacao.data} · Arquivar na pasta do aluno</span>
+    </div>
+  `;
+}
+
+// ══ ENVIO PARA SUPABASE ════════════════════════════════════════════════════════
+async function enviarParaSupabase() {
+  const btn = document.getElementById('btn-enviar');
+  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+  btn.disabled = true;
+
+  const avaliados = estado.alunos.filter(a=>a.suporte);
+  const registros = avaliados.map(al => ({
+    professor: estado.identificacao.prof,
+    turma: estado.identificacao.turma,
+    turno: estado.identificacao.turno,
+    data_avaliacao: estado.identificacao.data,
+    nome_aluno: al.nome,
+    deficiencia: al.deficiencia || '',
+    suporte_nivel: al.suporte.nivel,
+    suporte_label: al.suporte.label,
+    pontos: al.pontos,
+    pontos_max: PONTOS_MAX,
+    respostas: al.respostas,
+    enviado_em: new Date().toISOString()
+  }));
+
+  try {
+    const { error } = await db.from('avaliacoes_suporte').insert(registros);
+    if (error) throw error;
+    btn.innerHTML = '✅ Enviado com sucesso!';
+    btn.style.background = 'var(--green)';
+    // Mostrar nav com painel
+    document.getElementById('breadcrumb-wrap').style.display = 'none';
+    document.getElementById('nav-tabs-wrap').style.display = 'flex';
+  } catch (err) {
+    console.error(err);
+    btn.innerHTML = '❌ Erro ao enviar';
+    btn.style.background = 'var(--red)';
+    btn.disabled = false;
+    alert('Erro ao salvar no Supabase: ' + (err.message || err));
+  }
+}
+
+// ══ PAINEL DA EQUIPE ═══════════════════════════════════════════════════════════
+let todosDados = [];
+
+async function carregarPainel() {
+  document.getElementById('painel-loading').style.display = 'flex';
+  document.getElementById('painel-erro').style.display = 'none';
+  document.getElementById('painel-tbody').innerHTML = '';
+  document.getElementById('painel-vazio').style.display = 'none';
+
+  try {
+    const { data, error } = await db
+      .from('avaliacoes_suporte')
+      .select('*')
+      .order('enviado_em', { ascending: false });
+    if (error) throw error;
+
+    todosDados = data || [];
+    document.getElementById('painel-loading').style.display = 'none';
+    popularFiltroTurmas();
+    aplicarFiltros();
+  } catch (err) {
+    document.getElementById('painel-loading').style.display = 'none';
+    const elErro = document.getElementById('painel-erro');
+    elErro.style.display = 'flex';
+    elErro.textContent = '❌ Erro ao carregar dados: ' + (err.message || err);
+  }
+}
+
+function popularFiltroTurmas() {
+  const turmas = [...new Set(todosDados.map(d=>d.turma))].sort();
+  const sel = document.getElementById('filtro-turma');
+  sel.innerHTML = '<option value="">Todas as turmas</option>' +
+    turmas.map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+
+function aplicarFiltros() {
+  const filtroTurma = document.getElementById('filtro-turma').value;
+  const filtroSuporte = document.getElementById('filtro-suporte').value;
+
+  let dados = todosDados;
+  if (filtroTurma) dados = dados.filter(d=>d.turma===filtroTurma);
+  if (filtroSuporte) dados = dados.filter(d=>d.suporte_nivel===parseInt(filtroSuporte));
+
+  // Resumo
+  const s1 = dados.filter(d=>d.suporte_nivel===1).length;
+  const s2 = dados.filter(d=>d.suporte_nivel===2).length;
+  const s3 = dados.filter(d=>d.suporte_nivel===3).length;
+  document.getElementById('painel-resumo').innerHTML = [
+    {l:'Total',v:dados.length,cor:'#1A3A6E',bg:'#E8F4FD'},
+    {l:'🔴 S1',v:s1,cor:'#C62828',bg:'#FFEBEE'},
+    {l:'🟠 S2',v:s2,cor:'#E65100',bg:'#FFF3E0'},
+    {l:'🟢 S3',v:s3,cor:'#2E7D32',bg:'#E8F5E9'},
+  ].map(c=>`
+    <div style="background:${c.bg};border-radius:10px;padding:10px;text-align:center;">
+      <div style="font-size:22px;font-weight:900;color:${c.cor};">${c.v}</div>
+      <div style="font-size:11px;color:${c.cor};font-weight:600;">${c.l}</div>
+    </div>
+  `).join('');
+
+  if (dados.length === 0) {
+    document.getElementById('painel-vazio').style.display = 'block';
+    document.getElementById('painel-tbody').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('painel-tbody').innerHTML = dados.map(d => {
+    const cores = {1:'#C62828',2:'#E65100',3:'#2E7D32'};
+    const bgs = {1:'#FFEBEE',2:'#FFF3E0',3:'#E8F5E9'};
+    const cor = cores[d.suporte_nivel]; const bg = bgs[d.suporte_nivel];
+    return `
+      <tr>
+        <td style="font-weight:600;">${d.professor}</td>
+        <td>${d.turma}</td>
+        <td style="font-size:11px;">${d.turno}</td>
+        <td style="font-size:11px;white-space:nowrap;">${d.data_avaliacao}</td>
+        <td style="font-weight:600;">${d.nome_aluno}</td>
+        <td style="font-size:11px;color:#666;">${d.deficiencia||'—'}</td>
+        <td>
+          <span style="background:${bg};color:${cor};border:1px solid ${cor}55;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;white-space:nowrap;">
+            ${d.suporte_label}
+          </span>
+        </td>
+        <td style="font-weight:700;color:${cor};text-align:center;">${d.pontos}/${d.pontos_max}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ══ RENDERIZAÇÃO INICIAL (INSTRUÇÕES) ══════════════════════════════════════════
+function renderizarInstrucoes() {
+  // Níveis
+  document.getElementById('niveis-wrap').innerHTML = [
+    {emoji:'🔴',nivel:'Suporte 1',sub:'Totalmente Dependente',cor:'#C62828',bg:'#FFEBEE',borda:'#EF9A9A',
+     desc:'O aluno apresenta limitações físicas e/ou cognitivas graves, ou comportamentos que inviabilizam a rotina escolar sem suporte contínuo e direto de um profissional de apoio.',
+     impl:'Exige profissional de apoio designado exclusivamente para este aluno, presente durante todo o período.'},
+    {emoji:'🟠',nivel:'Suporte 2',sub:'Autonomia Limitada',cor:'#E65100',bg:'#FFF3E0',borda:'#FFCC80',
+     desc:'O aluno apresenta habilidades básicas, mas requer auxílio moderado em atividades físicas ou adaptações pedagógicas. Consegue participar da turma com mediação pontual.',
+     impl:'Exige profissional de apoio disponível e atento, mas pode atender mais de um aluno S2 na mesma turma dependendo do contexto.'},
+    {emoji:'🟢',nivel:'Suporte 3',sub:'Autonomia Considerável',cor:'#2E7D32',bg:'#E8F5E9',borda:'#A5D6A7',
+     desc:'O aluno acompanha a rotina escolar com mínimas adaptações. Desafios comportamentais leves que não impedem a participação nas atividades.',
+     impl:'O apoio de um profissional beneficia o aluno, mas não precisa ser exclusivo. Pode ser atendido por profissional volante ou compartilhado.'},
+  ].map(n=>`
+    <div style="background:${n.bg};border:1px solid ${n.borda};border-radius:12px;padding:18px 22px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:26px;">${n.emoji}</span>
+        <div style="font-weight:800;font-size:16px;color:${n.cor};">${n.nivel} – ${n.sub}</div>
+      </div>
+      <p style="font-size:13px;color:#333;line-height:1.7;margin-bottom:10px;">${n.desc}</p>
+      <div style="background:rgba(0,0,0,0.04);border-radius:8px;padding:8px 12px;font-size:12px;color:${n.cor};font-weight:600;">
+        💡 ${n.impl}
+      </div>
+    </div>
+  `).join('');
+
+  // Dicas
+  document.getElementById('dicas-wrap').innerHTML = [
+    {i:'🔍',t:'Observe antes de responder',d:'Base suas respostas no que você observa cotidianamente em sala, não em diagnósticos ou laudos.'},
+    {i:'🎯',t:'Responda pensando no dia típico',d:'Considere como o aluno se comporta em um dia comum de aula, não nos dias excepcionalmente bons nem nos muito difíceis.'},
+    {i:'⚖️',t:'Seja fiel, não generoso nem rígido',d:'A classificação correta garante o apoio adequado. Não subestime nem superestime as dificuldades.'},
+    {i:'🔄',t:'A classificação pode mudar',d:'Este instrumento deve ser reaplicado ao longo do ano conforme o aluno evolui.'},
+    {i:'👥',t:'Avalie aluno por aluno',d:'Cada aluno com deficiência da sua turma deve ser avaliado individualmente.'},
+  ].map((d,i,arr)=>`
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:${i<arr.length-1?'12px':'0'};padding-bottom:${i<arr.length-1?'12px':'0'};border-bottom:${i<arr.length-1?'1px solid #F0F0F0':'none'};">
+      <span style="font-size:20px;flex-shrink:0;">${d.i}</span>
+      <div>
+        <div style="font-weight:700;font-size:13px;color:#1A202C;margin-bottom:2px;">${d.t}</div>
+        <div style="font-size:12px;color:var(--gray-text);line-height:1.6;">${d.d}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══ INICIALIZAÇÃO ═══════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Data atual
+  document.getElementById('id-data').value = new Date().toLocaleDateString('pt-BR');
+
+  // Listeners de identificação
+  ['id-prof','id-turma'].forEach(id => {
+    document.getElementById(id).addEventListener('input', validarIdentificacao);
+  });
+
+  renderizarInstrucoes();
+
+  // Verificar se há parâmetro ?painel na URL para mostrar nav logo de início
+  if (window.location.search.includes('painel')) {
+    document.getElementById('breadcrumb-wrap').style.display = 'none';
+    document.getElementById('nav-tabs-wrap').style.display = 'flex';
+    abrirAba('painel');
+  }
+});
+
+// Interceptar "Gerar Relatório" para renderizar antes de mostrar tela
+const origIrPara = irPara;
+window.irPara = function(tela) {
+  if (tela === 'relatorio') renderizarRelatorio();
+  origIrPara(tela);
+};
+</script>
+</body>
+</html>
