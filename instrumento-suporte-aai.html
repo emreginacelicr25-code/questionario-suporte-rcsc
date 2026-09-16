@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Instrumento de Classificação de Suporte — Equipe de Apoio à Inclusão | RCSC 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+<!--
+  ════════════════════════════════════════════════════════════════════════════
+  E.M. REGINA CELI DA SILVA CERDEIRA — Centro de Referência em Educação Inclusiva
+  Instrumento de Classificação de Suporte — versão da EQUIPE DE APOIO À INCLUSÃO
+
+  Preenchido por Agentes de Apoio à Inclusão 1 e 2 (mediadores e cuidadores)
+  e auxiliares de Educação Infantil, sobre os estudantes que acompanham.
+
+  Preserva integralmente as orientações de classificação do instrumento
+  anterior (versão dos professores regentes):
+     escala de 3 / 2 / 1 por item
+     >= 65% dos pontos  ->  Suporte 1 — Totalmente Dependente
+     >= 35% dos pontos  ->  Suporte 2 — Autonomia Limitada
+     abaixo de 35%      ->  Suporte 3 — Autonomia Considerável
+
+  As perguntas são novas e derivam da leitura integral dos 183 registros da
+  Plataforma de Inclusão e dos 96 registros do transporte (jul-set/2026):
+  interação social como maior área de dificuldade, metade da rotina em estado
+  alterado, seletividade alimentar, cuidado de higiene continuado, recusa de
+  embarque, jornada reduzida e crise no trajeto.
+
+  ANTES DE USAR: criar a tabela avaliacoes_suporte_aai
+  (script 02_tabela_avaliacoes_aai.sql).
+  ════════════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root {
+    --navy:#1A3A6E; --blue:#2E75B6; --red:#C62828; --orange:#E65100;
+    --green:#2E7D32; --amber:#B45309; --purple:#6A0572; --teal:#00695C;
+    --bg:#F4F6FB; --white:#fff; --border:#D0D5DD; --text:#4A5568;
+    --radius:12px; --shadow:0 1px 8px rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);min-height:100vh;color:#1a2534;}
+  header{background:linear-gradient(135deg,var(--navy),var(--blue));padding:14px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    box-shadow:0 2px 10px rgba(0,0,0,0.18);flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:20;}
+  .header-title{color:#fff;font-weight:800;font-size:15px;line-height:1.3;}
+  .header-sub{color:rgba(255,255,255,0.72);font-size:11px;margin-top:2px;}
+  .nav-tabs{display:flex;gap:6px;}
+  .nav-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;
+    border:none;font-family:inherit;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.65);transition:all .2s;}
+  .nav-tab.active{background:rgba(255,255,255,0.28);color:#fff;font-weight:700;}
+  main{padding:20px 14px 60px;max-width:840px;margin:0 auto;}
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 18px;margin-bottom:16px;}
+  .card-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+  .card-sub{font-size:12.5px;color:var(--text);line-height:1.5;}
+  .label{display:block;font-size:11.5px;font-weight:700;color:var(--navy);
+    text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+  .input,.select,.textarea{width:100%;padding:10px 11px;border:1px solid var(--border);
+    border-radius:9px;font-size:14px;font-family:inherit;background:#fff;color:#1a2534;}
+  .input:focus,.select:focus,.textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,117,182,.14);}
+  .textarea{min-height:76px;resize:vertical;}
+  .field{margin-bottom:13px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr;}}
+  .btn{background:var(--navy);color:#fff;border:none;padding:12px 18px;border-radius:9px;
+    font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;}
+  .btn:hover{opacity:.9;} .btn:disabled{background:#D0D5DD!important;cursor:not-allowed;}
+  .btn-ghost{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  .btn-row{display:flex;gap:9px;margin-top:6px;}
+  .prog-wrap{background:#E4E9F2;border-radius:20px;height:7px;overflow:hidden;margin:10px 0 4px;}
+  .prog-bar{height:100%;background:linear-gradient(90deg,var(--navy),var(--blue));transition:width .3s;}
+  .prog-txt{font-size:11px;color:var(--text);text-align:right;}
+  .dom-head{border-radius:10px;padding:13px 14px;margin-bottom:14px;}
+  .dom-t{font-size:15px;font-weight:800;margin-bottom:3px;}
+  .dom-d{font-size:12px;line-height:1.45;opacity:.9;}
+  .q{border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:12px;}
+  .q-n{font-size:10.5px;font-weight:800;color:var(--blue);letter-spacing:.06em;margin-bottom:4px;}
+  .q-t{font-size:14px;font-weight:600;line-height:1.45;margin-bottom:10px;}
+  .opt{display:flex;gap:9px;align-items:flex-start;border:1.5px solid var(--border);
+    border-radius:9px;padding:10px 11px;margin-bottom:7px;cursor:pointer;transition:all .15s;}
+  .opt:hover{border-color:var(--blue);background:#F7FAFD;}
+  .opt input{margin-top:2px;flex-shrink:0;accent-color:var(--navy);}
+  .opt span{font-size:13px;line-height:1.42;}
+  .opt.sel{border-color:var(--navy);background:#EEF4FB;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px;}
+  @media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{border-radius:10px;padding:13px 9px;text-align:center;}
+  .kpi-v{font-size:24px;font-weight:800;line-height:1;}
+  .kpi-l{font-size:10.5px;font-weight:700;margin-top:4px;text-transform:uppercase;letter-spacing:.03em;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:var(--navy);color:#fff;padding:8px 9px;text-align:left;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;}
+  td{padding:8px 9px;border-bottom:1px solid #EDF0F5;vertical-align:middle;}
+  tr:nth-child(even) td{background:#FAFBFD;}
+  .tbl-wrap{overflow-x:auto;max-height:520px;}
+  .alert{border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.5;margin-bottom:13px;}
+  .alert-w{background:#FFF8E6;border:1px solid #F0C040;color:#7a5a00;}
+  .alert-e{background:#FFEBEE;border:1px solid #F0B3AD;color:#8a1c0f;}
+  .alert-i{background:#EEF4FB;border:1px solid #C6DCF0;color:var(--navy);}
+  .alert-ok{background:#E8F5E9;border:1px solid #A5D6A7;color:#1B5E20;}
+  .orient{border-left:4px solid var(--navy);padding-left:12px;margin:12px 0;}
+  .orient-l{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px;font-size:12.5px;line-height:1.5;}
+  .hide{display:none!important;}
+  .dom-bar{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:12px;}
+  .dom-bar-n{flex:0 0 38%;font-weight:600;}
+  .dom-bar-t{flex:1;background:#E4E9F2;border-radius:10px;height:14px;overflow:hidden;}
+  .dom-bar-f{height:100%;border-radius:10px;}
+  .dom-bar-v{flex:0 0 52px;text-align:right;font-weight:700;}
+  .foot{text-align:center;font-size:11px;color:#8A96A8;padding:14px 0;line-height:1.6;}
+  @media print{header,.nav-tabs,.no-print{display:none!important;} body{background:#fff;} .card{box-shadow:none;border:1px solid #ccc;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-title">Instrumento de Classificação de Suporte</div>
+    <div class="header-sub">Equipe de Apoio à Inclusão · E.M. Regina Celi da Silva Cerdeira · 2026</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tabQ" onclick="irPara('q')">📋 Avaliar</button>
+    <button class="nav-tab" id="tabP" onclick="irPara('p')">📊 Painel da Equipe</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════════ QUESTIONÁRIO ═══════════════════ -->
+<div id="viewQ">
+
+  <!-- PASSO 1 — IDENTIFICAÇÃO -->
+  <div class="card" id="passo1">
+    <div class="card-title">Quem está avaliando</div>
+    <div class="card-sub" style="margin-bottom:14px">
+      Esta versão do instrumento é respondida por quem acompanha o estudante na rotina —
+      mediador, cuidador ou auxiliar de Educação Infantil. Responda pensando no que o
+      estudante faz habitualmente, e não no seu melhor nem no seu pior dia.
+    </div>
+    <div class="field">
+      <label class="label">Seu nome completo *</label>
+      <input type="text" id="p_nome" class="input" placeholder="Nome completo">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label class="label">Sua função *</label>
+        <select id="p_funcao" class="select">
+          <option value="">-- Selecione --</option>
+          <option>AAI 1 — Mediador(a)</option>
+          <option>AAI 2 — Cuidador(a)</option>
+          <option>Auxiliar de Educação Infantil</option>
+          <option>Monitor(a) de apoio</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="label">Turno *</label>
+        <select id="p_turno" class="select">
+          <option value="">-- Selecione --</option>
+          <option>1º Turno (manhã)</option>
+          <option>2º Turno (tarde)</option>
+          <option>1º e 2º Turnos</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">Há quanto tempo você acompanha este estudante? *</label>
+      <select id="p_tempo" class="select">
+        <option value="">-- Selecione --</option>
+        <option>Menos de 1 mês</option>
+        <option>De 1 a 3 meses</option>
+        <option>De 3 a 6 meses</option>
+        <option>Mais de 6 meses</option>
+      </select>
+    </div>
+    <div class="alert alert-i" id="avisoTempo" style="display:none">
+      Com menos de um mês de acompanhamento, a avaliação fica registrada como
+      <strong>provisória</strong> e deve ser refeita depois. Preencha do mesmo modo:
+      é melhor ter uma leitura inicial do que nenhuma.
+    </div>
+    <button class="btn" onclick="validarPasso1()">Continuar</button>
+  </div>
+
+  <!-- PASSO 2 — ESTUDANTE -->
+  <div class="card hide" id="passo2">
+    <div class="card-title">Qual estudante</div>
+    <div class="card-sub" style="margin-bottom:14px">
+      Escolha o nome na lista. Um estudante deve ser avaliado uma única vez, pelo
+      profissional que mais convive com ele.
+    </div>
+    <div class="field">
+      <label class="label">Estudante *</label>
+      <select id="a_sel" class="select" onchange="onAlunoSel()">
+        <option value="">Carregando lista...</option>
+      </select>
+    </div>
+    <div id="manualWrap" class="hide">
+      <div class="grid2">
+        <div class="field">
+          <label class="label">Nome do estudante *</label>
+          <input type="text" id="a_nome_m" class="input" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label class="label">Turma *</label>
+          <input type="text" id="a_turma_m" class="input" placeholder="Ex.: 401, CE5">
+        </div>
+      </div>
+      <div class="alert alert-w">
+        Estudante fora da lista precisa ser cadastrado pela Secretaria. Avise a direção
+        depois de enviar, senão esta avaliação não se junta ao histórico da criança.
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">CID / Deficiência (se houver no laudo)</label>
+      <input type="text" id="a_cid" class="input" placeholder="Ex.: F84.0 · deixe em branco se não souber">
+    </div>
+    <div id="dupWrap"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="voltar(1)">Voltar</button>
+      <button class="btn" onclick="validarPasso2()">Continuar</button>
+    </div>
+  </div>
+
+  <!-- PASSO 3 — ORIENTAÇÕES DE CLASSIFICAÇÃO -->
+  <div class="card hide" id="passo3">
+    <div class="card-title">Como a classificação funciona</div>
+    <div class="card-sub">
+      As orientações abaixo são as mesmas do instrumento aplicado pelos professores
+      regentes, e foram mantidas sem alteração para que os dois resultados possam ser
+      comparados.
+    </div>
+    <div class="orient">
+      <div class="orient-l">
+        <span class="pill" style="background:#FFEBEE;color:var(--red)">🔴 Suporte 1</span>
+        <div><strong>Totalmente Dependente.</strong> Depende de apoio direto e contínuo
+        de um adulto para as rotinas essenciais. Sem esse apoio, não consegue permanecer
+        ou participar com segurança.</div>
+      </div>
+      <div class="orient-l">
+        <span class="pill" style="background:#FFF3E0;color:var(--orange)">🟠 Suporte 2</span>
+        <div><strong>Autonomia Limitada.</strong> Realiza parte das rotinas, mas precisa
+        de mediação, adaptação ou supervisão próxima em momentos específicos do dia.</div>
+      </div>
+      <div class="orient-l">
+        <span class="pill" style="background:#E8F5E9;color:var(--green)">🟢 Suporte 3</span>
+        <div><strong>Autonomia Considerável.</strong> Realiza as rotinas com apoio
+        pontual, lembretes ou pequenas adaptações.</div>
+      </div>
+    </div>
+    <div class="alert alert-i">
+      Cada item tem três alternativas, valendo <strong>3, 2 ou 1 ponto</strong> — 3 indica
+      maior necessidade de suporte. O resultado sai da proporção de pontos obtidos:
+      <strong>65% ou mais</strong> resulta em Suporte 1, <strong>35% ou mais</strong> em
+      Suporte 2, e abaixo disso em Suporte 3. Não existe resposta certa ou errada:
+      o instrumento mede necessidade de apoio, não desempenho da criança.
+    </div>
+    <div class="alert alert-w">
+      <strong>Responda pelo que é habitual.</strong> Se a criança tem dias muito diferentes
+      entre si, escolha a alternativa que descreve a maioria dos dias. Há um campo de
+      observação no final para o que não couber nas alternativas.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="voltar(2)">Voltar</button>
+      <button class="btn" onclick="iniciarQuestionario()">Começar a avaliação</button>
+    </div>
+  </div>
+
+  <!-- PASSO 4 — DOMÍNIOS -->
+  <div class="card hide" id="passo4">
+    <div id="progArea">
+      <div class="prog-wrap"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
+      <div class="prog-txt" id="progTxt"></div>
+    </div>
+    <div id="domArea"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnPrev" onclick="domAnterior()">Voltar</button>
+      <button class="btn" id="btnNext" onclick="domProximo()">Continuar</button>
+    </div>
+  </div>
+
+  <!-- PASSO 5 — RESULTADO -->
+  <div class="card hide" id="passo5">
+    <div id="resultArea"></div>
+    <div class="field" style="margin-top:14px">
+      <label class="label">Observação do profissional</label>
+      <textarea id="obs" class="textarea" placeholder="O que as alternativas não conseguiram descrever: gatilhos, estratégia que funciona, mudança recente, necessidade de material ou de formação."></textarea>
+    </div>
+    <div class="alert alert-i">
+      O que você escrever aqui é o que a equipe diretiva mais lê. Uma frase concreta vale
+      mais que meia página: "só aceita alimento de textura lisa" diz mais que
+      "tem dificuldade na alimentação".
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="voltarDominios()">Revisar respostas</button>
+      <button class="btn" id="btnEnviar" onclick="enviar()">Enviar avaliação</button>
+    </div>
+  </div>
+
+  <!-- CONFIRMAÇÃO -->
+  <div class="card hide" id="passoOk">
+    <div id="okArea"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ PAINEL ═══════════════════ -->
+<div id="viewP" class="hide">
+  <div class="card">
+    <div class="card-title">Painel da Equipe Diretiva</div>
+    <div class="card-sub">Avaliações enviadas pela equipe de apoio à inclusão.</div>
+    <div class="grid2" style="margin-top:13px">
+      <div class="field">
+        <label class="label">Turma</label>
+        <select id="f_turma" class="select" onchange="renderPainel()"><option value="">Todas as turmas</option></select>
+      </div>
+      <div class="field">
+        <label class="label">Nível de suporte</label>
+        <select id="f_sup" class="select" onchange="renderPainel()">
+          <option value="">Todos os suportes</option>
+          <option value="1">🔴 Suporte 1</option>
+          <option value="2">🟠 Suporte 2</option>
+          <option value="3">🟢 Suporte 3</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="carregarPainel()">Atualizar</button>
+      <button class="btn btn-ghost" onclick="exportarCSV()">Exportar CSV</button>
+      <button class="btn btn-ghost" onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+  <div id="painelArea"></div>
+</div>
+
+<div class="foot">
+  E.M. Regina Celi da Silva Cerdeira — Centro de Referência em Educação Inclusiva<br>
+  Documento de uso interno. Contém dados pessoais sensíveis de crianças (Lei nº 13.709/2018, arts. 11 e 46).
+</div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://vjxsvcohipeyepfbkmro.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_gn6TBJ888I6cT137tPc3DA_-Biu4ipo';
+const TABELA = 'avaliacoes_suporte_aai';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════════════════════════════════════
+// DOMÍNIOS E PERGUNTAS — versão da equipe de apoio à inclusão
+// Polaridade preservada do instrumento anterior: 3 = maior necessidade.
+// ══════════════════════════════════════════════════════════════════════════
+const DOMINIOS = [
+{id:"cv",titulo:"Cuidado e Vida Diária",cor:"#2E7D32",bg:"#E8F5E9",
+ descricao:"Higiene, alimentação, vestuário e autocuidado — o que você faz com ele e o que ele faz sozinho.",
+ perguntas:[
+  {id:"cv1",texto:"Quanto apoio o estudante precisa para higiene e uso do banheiro?",opcoes:[
+    {v:3,t:"Depende inteiramente de mim: troca de fralda, higiene íntima ou cuidado de dispositivo de saúde"},
+    {v:2,t:"Vai ao banheiro com acompanhamento e ajuda parcial, ou precisa de supervisão próxima"},
+    {v:1,t:"Usa o banheiro sozinho; preciso apenas lembrar ou conferir"}]},
+  {id:"cv2",texto:"Como é a alimentação do estudante na escola?",opcoes:[
+    {v:3,t:"Preciso oferecer o alimento, adaptar consistência ou ele recusa quase tudo o que é servido"},
+    {v:2,t:"Come sozinho, mas com seletividade acentuada, ou precisa de ajuda para abrir, cortar e organizar"},
+    {v:1,t:"Come sozinho e aceita a maior parte do que é servido"}]},
+  {id:"cv3",texto:"O estudante precisa de apoio para vestuário, calçado e organização dos próprios pertences?",opcoes:[
+    {v:3,t:"Depende de mim para tudo: vestir, calçar, mochila e material"},
+    {v:2,t:"Faz parte sozinho, com ajuda em botões, cordões ou na organização do material"},
+    {v:1,t:"Faz sozinho ou com lembretes pontuais"}]},
+  {id:"cv4",texto:"O estudante depende de insumos, equipamento ou procedimento específico ao longo do dia?",opcoes:[
+    {v:3,t:"Sim, todos os dias: fralda, sonda, estoma, medicação em horário, cadeira, órtese ou dieta própria"},
+    {v:2,t:"Ocasionalmente ou apenas em parte do dia"},
+    {v:1,t:"Não depende de nenhum insumo ou equipamento"}]}
+ ]},
+
+{id:"rc",titulo:"Regulação e Manejo de Crise",cor:"#C62828",bg:"#FFEBEE",
+ descricao:"Estado emocional habitual, frequência de desorganização e o que a crise exige de você.",
+ perguntas:[
+  {id:"rc1",texto:"Em um dia comum, como o estudante costuma estar na maior parte do tempo?",opcoes:[
+    {v:3,t:"Agitado ou apático na maior parte do dia — a desregulação é o estado mais frequente"},
+    {v:2,t:"Alterna: parte do dia tranquilo, parte agitado ou retraído"},
+    {v:1,t:"Tranquilo e responsivo na maior parte do tempo"}]},
+  {id:"rc2",texto:"Com que frequência o estudante entra em crise — choro intenso, grito sustentado, jogar-se ao chão?",opcoes:[
+    {v:3,t:"Todos os dias ou quase todos os dias"},
+    {v:2,t:"Algumas vezes por semana ou por mês"},
+    {v:1,t:"Raramente ou nunca"}]},
+  {id:"rc3",texto:"Nos momentos de desorganização, há risco para ele mesmo ou para outras pessoas?",opcoes:[
+    {v:3,t:"Sim, com frequência: autoagressão, agressão a colegas ou a profissionais, arremesso de objetos"},
+    {v:2,t:"Ocasionalmente, em episódios pontuais que exigem minha intervenção direta"},
+    {v:1,t:"Raramente ou nunca"}]},
+  {id:"rc4",texto:"O que é preciso para que ele volte ao estado habitual depois de uma crise?",opcoes:[
+    {v:3,t:"Retirada do ambiente, apoio de outro profissional ou acionamento da família; leva mais de 20 minutos"},
+    {v:2,t:"Minha intervenção próxima e um tempo fora da atividade; recupera-se em alguns minutos"},
+    {v:1,t:"Recupera-se sozinho ou com uma orientação breve"}]}
+ ]},
+
+{id:"co",titulo:"Comunicação e Compreensão",cor:"#1A3A6E",bg:"#E8F4FD",
+ descricao:"Como ele expressa o que precisa e como compreende o que se pede.",
+ perguntas:[
+  {id:"co1",texto:"Como o estudante manifesta o que quer ou o que está sentindo?",opcoes:[
+    {v:3,t:"Não usa fala: expressa por choro, gesto, comportamento ou não manifesta — preciso interpretar"},
+    {v:2,t:"Usa fala limitada, palavras isoladas ou comunicação alternativa"},
+    {v:1,t:"Comunica-se de forma compreensível, mesmo com particularidades"}]},
+  {id:"co2",texto:"O estudante compreende e cumpre uma orientação simples dada ao grupo?",opcoes:[
+    {v:3,t:"Não — preciso chamar pelo nome, ir até ele e conduzir a cada etapa"},
+    {v:2,t:"Compreende com repetição, apoio visual ou orientação individual"},
+    {v:1,t:"Compreende a orientação dada ao grupo"}]},
+  {id:"co3",texto:"O estudante precisa ser avisado com antecedência sobre o que vai acontecer?",opcoes:[
+    {v:3,t:"Sim, sempre: sem antecipação e rotina previsível, a mudança gera recusa ou crise"},
+    {v:2,t:"Em mudanças maiores, como saída de sala, troca de professor ou atividade diferente"},
+    {v:1,t:"Lida bem com mudanças de rotina"}]}
+ ]},
+
+{id:"mt",titulo:"Mobilidade e Transições",cor:"#00695C",bg:"#E0F2F1",
+ descricao:"Deslocamento pela escola, passagem de um momento a outro e o transporte escolar.",
+ perguntas:[
+  {id:"mt1",texto:"Como é o deslocamento do estudante pela escola — corredor, pátio, refeitório, escada?",opcoes:[
+    {v:3,t:"Depende inteiramente de acompanhamento: cadeira de rodas, andador, colo ou risco de fuga"},
+    {v:2,t:"Anda sozinho, mas preciso ficar ao lado por segurança ou orientação"},
+    {v:1,t:"Desloca-se com autonomia"}]},
+  {id:"mt2",texto:"Como o estudante lida com as transições entre espaços e atividades?",opcoes:[
+    {v:3,t:"A transição é o momento mais difícil do dia: recusa, agitação ou crise na maioria das vezes"},
+    {v:2,t:"Precisa de mediação, aviso prévio ou tempo extra para mudar de atividade"},
+    {v:1,t:"Muda de atividade sem dificuldade relevante"}]},
+  {id:"mt3",texto:"Se o estudante usa transporte escolar, como é a chegada e o embarque?",opcoes:[
+    {v:3,t:"Chega frequentemente desregulado, ou há recusa de embarque, recusa de cinto ou crise no trajeto"},
+    {v:2,t:"Precisa de apoio para embarcar ou desembarcar, ou chega alterado às vezes"},
+    {v:1,t:"Chega e embarca sem dificuldade — ou não usa transporte escolar"}]}
+ ]},
+
+{id:"pc",titulo:"Participação e Convivência",cor:"#6A0572",bg:"#F3E5F5",
+ descricao:"Atividade coletiva, relação com colegas e permanência na proposta da turma. Esta é a área de maior dificuldade registrada na escola.",
+ perguntas:[
+  {id:"pc1",texto:"O estudante participa das atividades propostas à turma?",opcoes:[
+    {v:3,t:"Não participa sem minha mediação direta e contínua, ou recusa a atividade"},
+    {v:2,t:"Participa com material adaptado, tempo reduzido ou orientação próxima"},
+    {v:1,t:"Participa com pequenas adaptações ou naturalmente"}]},
+  {id:"pc2",texto:"Como é a relação do estudante com os colegas?",opcoes:[
+    {v:3,t:"Isola-se completamente, ou há conflito recorrente — às vezes dirigido sempre ao mesmo colega"},
+    {v:2,t:"Interage com limitações e precisa de mediação para que a relação se mantenha positiva"},
+    {v:1,t:"Interage de forma razoável, mesmo com particularidades"}]},
+  {id:"pc3",texto:"O estudante consegue permanecer em um mesmo espaço junto com a turma?",opcoes:[
+    {v:3,t:"Não: sai da sala, precisa de espaço separado ou não permanece na atividade coletiva"},
+    {v:2,t:"Permanece com apoio próximo e pausas frequentes"},
+    {v:1,t:"Permanece junto com a turma sem dificuldade relevante"}]}
+ ]},
+
+{id:"ia",titulo:"Intensidade do Apoio e Jornada",cor:"#B45309",bg:"#FEF3C7",
+ descricao:"Quanto do seu tempo este estudante ocupa e se a jornada escolar dele está completa.",
+ perguntas:[
+  {id:"ia1",texto:"Que parte do turno você fica em apoio direto e exclusivo a este estudante?",opcoes:[
+    {v:3,t:"Praticamente todo o turno — não consigo me afastar nem por poucos minutos"},
+    {v:2,t:"Boa parte do turno, com momentos em que ele fica sem apoio direto"},
+    {v:1,t:"Apenas em momentos específicos do dia"}]},
+  {id:"ia2",texto:"Seria possível você acompanhar outro estudante ao mesmo tempo, com segurança?",opcoes:[
+    {v:3,t:"Não: o acompanhamento precisa ser exclusivo"},
+    {v:2,t:"Sim, mas apenas se o outro estudante tiver pouca demanda"},
+    {v:1,t:"Sim, sem prejuízo para nenhum dos dois"}]},
+  {id:"ia3",texto:"O estudante cumpre a jornada escolar completa?",opcoes:[
+    {v:3,t:"Não: sai antes do fim do turno com frequência, ou permanece muito pouco tempo na escola"},
+    {v:2,t:"Cumpre a maior parte, com saídas antecipadas ocasionais"},
+    {v:1,t:"Cumpre a jornada integralmente"}]}
+ ]}
+];
+
+const TOTAL_P = DOMINIOS.reduce((t,d)=>t+d.perguntas.length,0);
+const PONTOS_MAX = TOTAL_P * 3;
+
+// ══════════════════════════════════════════════════════════════════════════
+// CLASSIFICAÇÃO — preservada do instrumento anterior
+// ══════════════════════════════════════════════════════════════════════════
+function calcSuporte(pts){
+  const p = pts / PONTOS_MAX;
+  if(p >= 0.65) return {nivel:1,cor:"#C62828",bg:"#FFEBEE",emoji:"🔴",label:"Suporte 1 – Totalmente Dependente"};
+  if(p >= 0.35) return {nivel:2,cor:"#E65100",bg:"#FFF3E0",emoji:"🟠",label:"Suporte 2 – Autonomia Limitada"};
+  return {nivel:3,cor:"#2E7D32",bg:"#E8F5E9",emoji:"🟢",label:"Suporte 3 – Autonomia Considerável"};
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════════════════════════════════
+let ST = { prof:{}, aluno:{}, respostas:{}, domIdx:0 };
+let ALUNOS = [];
+let PAINEL = [];
+
+function el(id){ return document.getElementById(id); }
+function mostrar(id){ ['passo1','passo2','passo3','passo4','passo5','passoOk'].forEach(p=>el(p).classList.add('hide')); el(id).classList.remove('hide'); window.scrollTo({top:0,behavior:'smooth'}); }
+
+function irPara(v){
+  el('viewQ').classList.toggle('hide', v!=='q');
+  el('viewP').classList.toggle('hide', v!=='p');
+  el('tabQ').classList.toggle('active', v==='q');
+  el('tabP').classList.toggle('active', v==='p');
+  if(v==='p') carregarPainel();
+  window.scrollTo({top:0});
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PASSO 1
+// ══════════════════════════════════════════════════════════════════════════
+el('p_tempo').addEventListener('change', function(){
+  el('avisoTempo').style.display = (this.value==='Menos de 1 mês') ? 'block' : 'none';
+});
+
+function validarPasso1(){
+  const nome=el('p_nome').value.trim(), funcao=el('p_funcao').value,
+        turno=el('p_turno').value, tempo=el('p_tempo').value;
+  if(!nome||!funcao||!turno||!tempo){ alert('Preencha nome, função, turno e tempo de acompanhamento.'); return; }
+  ST.prof={nome,funcao,turno,tempo};
+  try{ localStorage.setItem('rc_aai_prof', JSON.stringify(ST.prof)); }catch(e){}
+  mostrar('passo2');
+  carregarAlunos();
+}
+
+function voltar(n){ mostrar('passo'+n); }
+
+// ══════════════════════════════════════════════════════════════════════════
+// PASSO 2 — lista de estudantes vinda do Supabase (não mais fixa no código)
+// ══════════════════════════════════════════════════════════════════════════
+async function carregarAlunos(){
+  const sel=el('a_sel');
+  if(ALUNOS.length){ preencherSelectAlunos(); return; }
+  try{
+    const {data,error}=await db.from('alunos').select('id,nome,turma,turno,suporte').order('turma');
+    if(error) throw error;
+    ALUNOS=data||[];
+    preencherSelectAlunos();
+  }catch(e){
+    sel.innerHTML='<option value="">-- Não foi possível carregar a lista --</option>'+
+                  '<option value="__manual__">Digitar o nome manualmente</option>';
+  }
+}
+
+function preencherSelectAlunos(){
+  const sel=el('a_sel');
+  let h='<option value="">-- Selecione --</option>';
+  const porTurma={};
+  ALUNOS.forEach(a=>{ const t=a.turma||'Sem turma'; (porTurma[t]=porTurma[t]||[]).push(a); });
+  Object.keys(porTurma).sort().forEach(t=>{
+    h+='<optgroup label="Turma '+t+'">';
+    porTurma[t].sort((x,y)=>x.nome.localeCompare(y.nome)).forEach(a=>{
+      h+='<option value="'+a.id+'">'+a.nome+(a.suporte?' · '+a.suporte:'')+'</option>';
+    });
+    h+='</optgroup>';
+  });
+  h+='<option value="__manual__">Meu estudante não está na lista</option>';
+  sel.innerHTML=h;
+}
+
+async function onAlunoSel(){
+  const v=el('a_sel').value;
+  el('manualWrap').classList.toggle('hide', v!=='__manual__');
+  el('dupWrap').innerHTML='';
+  if(!v||v==='__manual__') return;
+  const a=ALUNOS.find(x=>String(x.id)===String(v));
+  if(!a) return;
+  await checarDuplicidade(a.nome);
+}
+
+async function checarDuplicidade(nome){
+  try{
+    const {data}=await db.from(TABELA).select('id,profissional,suporte_label,enviado_em')
+      .eq('nome_aluno',nome).eq('vigente',true);
+    if(data&&data.length){
+      const d=data[0];
+      el('dupWrap').innerHTML='<div class="alert alert-w"><strong>Este estudante já foi avaliado neste instrumento.</strong><br>'+
+        'Por '+(d.profissional||'—')+' — resultado: '+(d.suporte_label||'—')+'.<br>'+
+        'Se você enviar uma nova avaliação, a anterior deixa de valer e esta passa a ser a vigente. '+
+        'Só faça isso se você conviver mais com a criança ou se algo mudou de fato.</div>';
+    }
+  }catch(e){}
+}
+
+function validarPasso2(){
+  const v=el('a_sel').value;
+  if(!v){ alert('Selecione o estudante.'); return; }
+  if(v==='__manual__'){
+    const n=el('a_nome_m').value.trim(), t=el('a_turma_m').value.trim();
+    if(!n||!t){ alert('Informe o nome e a turma do estudante.'); return; }
+    ST.aluno={id:null,nome:n,turma:t,turno:ST.prof.turno,fora_da_lista:true};
+  }else{
+    const a=ALUNOS.find(x=>String(x.id)===String(v));
+    ST.aluno={id:a.id,nome:a.nome,turma:a.turma,turno:a.turno,suporte_cadastro:a.suporte,fora_da_lista:false};
+  }
+  ST.aluno.cid=el('a_cid').value.trim();
+  mostrar('passo3');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PASSO 4 — DOMÍNIOS
+// ══════════════════════════════════════════════════════════════════════════
+function iniciarQuestionario(){ ST.domIdx=0; renderDominio(); mostrar('passo4'); }
+
+function renderDominio(){
+  const d=DOMINIOS[ST.domIdx];
+  let respondidas=0; DOMINIOS.forEach(dm=>dm.perguntas.forEach(p=>{ if(ST.respostas[p.id]) respondidas++; }));
+  el('progBar').style.width=Math.round(100*respondidas/TOTAL_P)+'%';
+  el('progTxt').textContent='Bloco '+(ST.domIdx+1)+' de '+DOMINIOS.length+' · '+respondidas+' de '+TOTAL_P+' respondidas';
+
+  let h='<div class="dom-head" style="background:'+d.bg+';color:'+d.cor+'">'+
+        '<div class="dom-t">'+d.titulo+'</div><div class="dom-d">'+d.descricao+'</div></div>';
+  d.perguntas.forEach((p,i)=>{
+    h+='<div class="q"><div class="q-n">Questão '+(i+1)+' de '+d.perguntas.length+'</div>'+
+       '<div class="q-t">'+p.texto+'</div>';
+    p.opcoes.forEach(o=>{
+      const sel=ST.respostas[p.id]===o.v;
+      h+='<label class="opt'+(sel?' sel':'')+'" onclick="resp(\''+p.id+'\','+o.v+')">'+
+         '<input type="radio" name="'+p.id+'" '+(sel?'checked':'')+'>'+
+         '<span>'+o.t+'</span></label>';
+    });
+    h+='</div>';
+  });
+  el('domArea').innerHTML=h;
+  el('btnPrev').textContent = ST.domIdx===0 ? 'Voltar às orientações' : 'Bloco anterior';
+  el('btnNext').textContent = ST.domIdx===DOMINIOS.length-1 ? 'Ver resultado' : 'Continuar';
+}
+
+function resp(pid,v){ ST.respostas[pid]=v; renderDominio(); }
+
+function domAnterior(){ if(ST.domIdx===0){ mostrar('passo3'); return; } ST.domIdx--; renderDominio(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+function domProximo(){
+  const d=DOMINIOS[ST.domIdx];
+  const falta=d.perguntas.filter(p=>!ST.respostas[p.id]);
+  if(falta.length){ alert('Responda todas as '+d.perguntas.length+' questões deste bloco antes de continuar.'); return; }
+  if(ST.domIdx===DOMINIOS.length-1){ renderResultado(); mostrar('passo5'); return; }
+  ST.domIdx++; renderDominio(); window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function voltarDominios(){ ST.domIdx=0; renderDominio(); mostrar('passo4'); }
+
+// ══════════════════════════════════════════════════════════════════════════
+// PASSO 5 — RESULTADO
+// ══════════════════════════════════════════════════════════════════════════
+function pontuar(){
+  let total=0; const dom={};
+  DOMINIOS.forEach(d=>{
+    let s=0; d.perguntas.forEach(p=>{ s+=(ST.respostas[p.id]||0); });
+    dom[d.id]={pontos:s,max:d.perguntas.length*3,media:+(s/d.perguntas.length).toFixed(2),titulo:d.titulo,cor:d.cor};
+    total+=s;
+  });
+  return {total,dom};
+}
+
+function renderResultado(){
+  const {total,dom}=pontuar();
+  const s=calcSuporte(total);
+  const pct=Math.round(100*total/PONTOS_MAX);
+
+  let h='<div style="text-align:center;padding:16px;border-radius:12px;background:'+s.bg+';border:1.5px solid '+s.cor+'44">'+
+    '<div style="font-size:34px;line-height:1">'+s.emoji+'</div>'+
+    '<div style="font-size:19px;font-weight:800;color:'+s.cor+';margin-top:6px">'+s.label+'</div>'+
+    '<div style="font-size:13px;color:'+s.cor+';margin-top:4px">'+total+' de '+PONTOS_MAX+' pontos · '+pct+'%</div>'+
+    '<div style="font-size:12px;color:var(--text);margin-top:8px">'+ST.aluno.nome+' · Turma '+ST.aluno.turma+'</div></div>';
+
+  if(ST.aluno.suporte_cadastro && ST.aluno.suporte_cadastro !== ('S'+s.nivel)){
+    h+='<div class="alert alert-w" style="margin-top:13px">No cadastro da escola este estudante consta como '+
+       '<strong>'+ST.aluno.suporte_cadastro+'</strong>, e o resultado desta avaliação é <strong>S'+s.nivel+'</strong>. '+
+       'A divergência não é erro: a equipe diretiva vai analisar qual leitura prevalece. Continue o envio.</div>';
+  }
+
+  h+='<div style="margin-top:16px"><div class="label">Onde está a maior demanda</div>';
+  const ordenado=Object.values(dom).sort((a,b)=>b.media-a.media);
+  ordenado.forEach(d=>{
+    const larg=Math.round(100*(d.media-1)/2);
+    h+='<div class="dom-bar"><div class="dom-bar-n">'+d.titulo+'</div>'+
+       '<div class="dom-bar-t"><div class="dom-bar-f" style="width:'+larg+'%;background:'+d.cor+'"></div></div>'+
+       '<div class="dom-bar-v" style="color:'+d.cor+'">'+d.media.toFixed(1)+'</div></div>';
+  });
+  h+='<div style="font-size:11.5px;color:var(--text);margin-top:6px;line-height:1.5">'+
+     'Média de 1 a 3 por bloco. O bloco no topo é onde este estudante mais precisa de apoio — '+
+     'é por ali que o plano de ação deve começar.</div></div>';
+  el('resultArea').innerHTML=h;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ENVIO
+// ══════════════════════════════════════════════════════════════════════════
+async function enviar(){
+  const btn=el('btnEnviar');
+  btn.disabled=true; btn.textContent='Enviando...';
+  const {total,dom}=pontuar();
+  const s=calcSuporte(total);
+  const linha={
+    profissional:ST.prof.nome, funcao:ST.prof.funcao, turno:ST.prof.turno,
+    tempo_acompanhamento:ST.prof.tempo,
+    provisoria:ST.prof.tempo==='Menos de 1 mês',
+    aluno_id:ST.aluno.id, nome_aluno:ST.aluno.nome, turma:ST.aluno.turma,
+    cid:ST.aluno.cid||null, fora_da_lista:!!ST.aluno.fora_da_lista,
+    data_avaliacao:new Date().toISOString().slice(0,10),
+    respostas:ST.respostas, dominios:dom,
+    pontos:total, pontos_max:PONTOS_MAX,
+    suporte_nivel:s.nivel, suporte_label:s.label,
+    observacao:el('obs').value.trim()||null,
+    vigente:true
+  };
+  try{
+    // a avaliação anterior do mesmo estudante deixa de ser a vigente
+    await db.from(TABELA).update({vigente:false}).eq('nome_aluno',ST.aluno.nome).eq('vigente',true);
+    const {error}=await db.from(TABELA).insert([linha]);
+    if(error) throw error;
+    el('okArea').innerHTML='<div class="alert alert-ok"><strong>Avaliação enviada.</strong><br>'+
+      ST.aluno.nome+' — '+s.label+' ('+total+'/'+PONTOS_MAX+').</div>'+
+      '<div class="card-sub">Obrigado. O que você respondeu vai direto para o painel da equipe diretiva '+
+      'e orienta a escala de apoio e o plano de ação deste estudante.</div>'+
+      '<div class="btn-row"><button class="btn" onclick="novaAvaliacao()">Avaliar outro estudante</button></div>';
+    mostrar('passoOk');
+  }catch(e){
+    btn.disabled=false; btn.textContent='Enviar avaliação';
+    alert('Não foi possível enviar agora.\n\n'+(e.message||e)+
+      '\n\nSe a mensagem falar em tabela inexistente, a tabela avaliacoes_suporte_aai ainda não foi criada no banco. Avise a direção.');
+  }
+}
+
+function novaAvaliacao(){
+  ST.aluno={}; ST.respostas={}; ST.domIdx=0;
+  el('a_sel').value=''; el('a_cid').value=''; el('obs').value='';
+  el('a_nome_m').value=''; el('a_turma_m').value='';
+  el('manualWrap').classList.add('hide'); el('dupWrap').innerHTML='';
+  el('btnEnviar').disabled=false; el('btnEnviar').textContent='Enviar avaliação';
+  mostrar('passo2');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PAINEL
+// ══════════════════════════════════════════════════════════════════════════
+async function carregarPainel(){
+  el('painelArea').innerHTML='<div class="card"><div class="card-sub">Carregando...</div></div>';
+  try{
+    const {data,error}=await db.from(TABELA).select('*').eq('vigente',true).order('turma');
+    if(error) throw error;
+    PAINEL=data||[];
+    const turmas=[...new Set(PAINEL.map(x=>x.turma).filter(Boolean))].sort();
+    el('f_turma').innerHTML='<option value="">Todas as turmas</option>'+turmas.map(t=>'<option>'+t+'</option>').join('');
+    renderPainel();
+  }catch(e){
+    el('painelArea').innerHTML='<div class="card"><div class="alert alert-e">Não foi possível carregar: '+
+      (e.message||e)+'</div></div>';
+  }
+}
+
+function filtrar(){
+  const t=el('f_turma').value, s=el('f_sup').value;
+  return PAINEL.filter(x=>(!t||x.turma===t)&&(!s||String(x.suporte_nivel)===s));
+}
+
+function renderPainel(){
+  const d=filtrar();
+  const n1=d.filter(x=>x.suporte_nivel===1).length,
+        n2=d.filter(x=>x.suporte_nivel===2).length,
+        n3=d.filter(x=>x.suporte_nivel===3).length;
+
+  let h='<div class="card"><div class="kpis">'+
+    [{l:'Avaliados',v:d.length,c:'#1A3A6E',b:'#E8F4FD'},
+     {l:'🔴 Suporte 1',v:n1,c:'#C62828',b:'#FFEBEE'},
+     {l:'🟠 Suporte 2',v:n2,c:'#E65100',b:'#FFF3E0'},
+     {l:'🟢 Suporte 3',v:n3,c:'#2E7D32',b:'#E8F5E9'}]
+    .map(k=>'<div class="kpi" style="background:'+k.b+'"><div class="kpi-v" style="color:'+k.c+'">'+k.v+
+            '</div><div class="kpi-l" style="color:'+k.c+'">'+k.l+'</div></div>').join('')+'</div>';
+
+  // cobertura
+  if(ALUNOS.length){
+    const avaliados=new Set(PAINEL.map(x=>x.nome_aluno));
+    const faltam=ALUNOS.filter(a=>!avaliados.has(a.nome));
+    h+='<div class="alert '+(faltam.length?'alert-w':'alert-ok')+'">'+
+       '<strong>Cobertura:</strong> '+(ALUNOS.length-faltam.length)+' de '+ALUNOS.length+
+       ' estudantes cadastrados já têm avaliação da equipe de apoio.'+
+       (faltam.length?' Faltam '+faltam.length+'.':' Cobertura completa.')+'</div>';
+  }
+
+  // médias por domínio
+  if(d.length){
+    const acc={};
+    DOMINIOS.forEach(dm=>acc[dm.id]={soma:0,n:0,titulo:dm.titulo,cor:dm.cor});
+    d.forEach(x=>{ const dd=x.dominios||{}; Object.keys(acc).forEach(k=>{ if(dd[k]&&dd[k].media!=null){ acc[k].soma+=dd[k].media; acc[k].n++; } }); });
+    const ord=Object.values(acc).filter(a=>a.n).map(a=>({...a,media:a.soma/a.n})).sort((a,b)=>b.media-a.media);
+    if(ord.length){
+      h+='<div style="margin-top:6px"><div class="label">Média por bloco — onde a escola concentra demanda</div>';
+      ord.forEach(a=>{
+        const larg=Math.round(100*(a.media-1)/2);
+        h+='<div class="dom-bar"><div class="dom-bar-n">'+a.titulo+'</div>'+
+           '<div class="dom-bar-t"><div class="dom-bar-f" style="width:'+larg+'%;background:'+a.cor+'"></div></div>'+
+           '<div class="dom-bar-v" style="color:'+a.cor+'">'+a.media.toFixed(2)+'</div></div>';
+      });
+      h+='<div style="font-size:11.5px;color:var(--text);margin-top:6px;line-height:1.5">'+
+         'O bloco no topo define a prioridade de formação da equipe.</div></div>';
+    }
+  }
+  h+='</div>';
+
+  // tabela
+  h+='<div class="card"><div class="card-title" style="font-size:14px;margin-bottom:10px">Avaliações</div>';
+  if(!d.length){ h+='<div class="card-sub">Nenhuma avaliação com os filtros atuais.</div></div>'; el('painelArea').innerHTML=h; return; }
+  const cor={1:'#C62828',2:'#E65100',3:'#2E7D32'}, bgc={1:'#FFEBEE',2:'#FFF3E0',3:'#E8F5E9'};
+  h+='<div class="tbl-wrap"><table><thead><tr>'+
+     '<th>Estudante</th><th>Turma</th><th>Classificação</th><th>Pontos</th>'+
+     '<th>Profissional</th><th>Função</th><th>Data</th><th>Observação</th></tr></thead><tbody>';
+  d.sort((a,b)=>a.suporte_nivel-b.suporte_nivel||(b.pontos-a.pontos)).forEach(x=>{
+    h+='<tr><td><strong>'+(x.nome_aluno||'')+'</strong>'+(x.fora_da_lista?' <span class="pill" style="background:#FFF8E6;color:#7a5a00">fora da lista</span>':'')+
+       (x.provisoria?' <span class="pill" style="background:#EEF4FB;color:#1A3A6E">provisória</span>':'')+'</td>'+
+       '<td>'+(x.turma||'')+'</td>'+
+       '<td><span class="pill" style="background:'+bgc[x.suporte_nivel]+';color:'+cor[x.suporte_nivel]+'">'+(x.suporte_label||'')+'</span></td>'+
+       '<td style="text-align:center;font-weight:700;color:'+cor[x.suporte_nivel]+'">'+x.pontos+'/'+x.pontos_max+'</td>'+
+       '<td>'+(x.profissional||'')+'</td><td style="font-size:11px">'+(x.funcao||'')+'</td>'+
+       '<td style="font-size:11px">'+(x.data_avaliacao||'')+'</td>'+
+       '<td style="font-size:11px;max-width:230px">'+(x.observacao||'—')+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+  el('painelArea').innerHTML=h;
+}
+
+function exportarCSV(){
+  const d=filtrar();
+  if(!d.length){ alert('Nada para exportar com os filtros atuais.'); return; }
+  const cols=['nome_aluno','turma','suporte_nivel','suporte_label','pontos','pontos_max',
+              'profissional','funcao','turno','tempo_acompanhamento','provisoria',
+              'cid','data_avaliacao','observacao'];
+  const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const csv=[cols.join(',')].concat(d.map(r=>cols.map(c=>esc(r[c])).join(','))).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='avaliacoes_suporte_aai_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// INÍCIO
+// ══════════════════════════════════════════════════════════════════════════
+(function(){
+  try{
+    const p=JSON.parse(localStorage.getItem('rc_aai_prof')||'null');
+    if(p){ el('p_nome').value=p.nome||''; el('p_funcao').value=p.funcao||''; el('p_turno').value=p.turno||''; }
+  }catch(e){}
+  carregarAlunos();
+})();
+</script>
+</body>
+</html>
